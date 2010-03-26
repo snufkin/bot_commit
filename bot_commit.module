@@ -23,12 +23,35 @@ function bot_commit_help($path, $arg) {
 function bot_commit_menu() {
   $items = array();
   $items['admin/settings/bot/bot_commit'] = array(
-    'title' => 'Configure bot commit',
+    'title'           => 'Configure bot commit',
+    'description'     => 'Configure the commit messages the bot can push to IRC.',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('bot_commit_settings'),
-    'access' => array('administer bot'),
+    'access arguments' => array('administer bot'),
   );
   return $items;
+}
+
+function bot_commit_settings() {
+  $form = array();
+
+  // get a list of all joined channels, sans passwords.
+  $joined_channels = preg_split('/\s*,\s*/', variable_get('bot_channels', '#test'));
+  $channel_options = array(); // HOW MAY I HELP YOU!?
+  foreach ($joined_channels as $k => $v) {
+    $channel = preg_replace('/(.*) .*/', '\1', $v);
+    $channel_options[$channel] = $channel;
+  }
+
+  $form['bot_commit_channel'] = array(
+    '#title' => t('IRC channel'),
+    '#description' => t('Select the channel to broadcast commits.'),
+    '#type'          => 'select',
+    '#size'          => 10,
+    '#options' => $channel_options,
+    '#default_value' => variable_get('bot_commit_channel', ''),
+  );
+  return system_settings_form($form);
 }
 
 /**
@@ -36,36 +59,47 @@ function bot_commit_menu() {
  */
 function bot_commit_xmlrpc() {
   return array(
-    'bot_commit.recordCommit',
-    'bot_commit_record_commit',
     array(
-      'string', // Commit id.
-      'string', // Commit message.
+      'bot_commit.recordCommit',
+      'bot_commit_record_commit',
+      array(
+        'string', // Return the commit id.
+        'string', // Commit id.
+        'string', // Commit author.
+        'string', // Commit message.
+      ),
+      t('Forwarding a commit message to IRC'),
     ),
-    t('Forwarding a commit message to IRC'),
   );
 }
 
 /**
  * Receive and record a commit entry from the XML-RPC call.
  */
-function bot_commit_record_commit($commit_id, $commit_message) {
+function bot_commit_record_commit($id, $author, $message) {
   $commit = new StdClass;
-  $commit->cid = $commit_id;
-  $commit->commit_message = $commit_message;
+  $commit->id = $id;
+  $commit->message = $message;
+  $commit->author = $author;
+  $commit->timestamp = time();
   drupal_write_record('bot_commit_queue', $commit);
 }
 
-function bot_commit_irc_bot_cron_faster() {
+/**
+ * Implementation of hook_irc_bot_cron_fastest().
+ */
+function bot_commit_irc_bot_cron_fastest() {
   // Go through the commit messages and push them to irc.
-  $result = db_query('SELECT cid, message, timestamp FROM {bot_commitqueue} ORDER BY timestamp DESC');
+  $result = db_query('SELECT qid, id, author, message, timestamp FROM {bot_commit_queue} ORDER BY timestamp DESC');
   while ($commit = db_fetch_object($result)) {
-    bot_commit_publish_message($commit->cid, $commit->message);
-    db_query('DELETE FROM {bot_commit_queue} WHERE cid = "%s"', $commit->cid);
+    bot_commit_publish_message($commit);
+    db_query('DELETE FROM {bot_commit_queue} WHERE qid = %d', $commit->qid);
   }
 }
 
-function bot_commit_publish_message($id, $message) {
-  $to = '#test';
-  bot_message($to, t('%commit => %message', array('%commmit' => $id, '%message' => $message)));
+function bot_commit_publish_message($commit) {
+  $channel = variable_get('bot_commit_channel', '');
+  if ($channel) {
+    bot_message($channel, t('@commit by @author: @message', array('@commit' => $commit->id, '@author' => $commit->author, '@message' => $commit->message)));
+  }
 }

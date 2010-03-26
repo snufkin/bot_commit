@@ -1,32 +1,55 @@
 <?php 
 
+/**
+ * Implementation of hook_schema().
+ */
 function bot_commit_schema() {
   $schema = array();
   $schema['bot_commit_queue'] = array(
     'description' => 'Queue commits until the bot cron can go through them and post.',
     'fields' => array(
-      'cid' => array(
-        'type' => 'varchar',
-        'lenght' => 128,
-        'description' => 'Commit id',
+      'qid' => array(
+        'description' => 'A unique ID for this commit.',
+        'not null'    => TRUE,
+        'size'        => 'big',
+        'type'        => 'serial',
+        'unsigned'    => TRUE,
+      ),
+      'id' => array(
+        'description' => 'An ID relevant for this commit, not necessarily unique. Provided by the user during the remote call.',
+        'type'        => 'varchar',
+        'length'      => 255,
+        'not null'    => TRUE,
+        'default'     => '',
+      ),
+      'author' => array(
+        'description' => 'Author of the commit',
+        'type'        => 'text',
+        'default'     => '',
+        'not null'    => TRUE,
       ),
       'message' => array(
         'description' => 'Commit message',
-        'type' => 'text',
-        'default' => '',
-        'not null' => TRUE,
+        'type'        => 'text',
+        'default'     => '',
+        'not null'    => TRUE,
       ),
       'timestamp' => array(
         'description' => 'Time when this commit was received, will be used by bot cron.',
-        'type' => 'int',
-        'default' => 0,
-        'not null' => TRUE,
+        'type'        => 'int',
+        'default'     => 0,
+        'not null'    => TRUE,
+        'unsigned'    => TRUE,
       ),
     ),
+    'primary key' => array('qid'),
   );
   return $schema;
 }
 
+/**
+ * Implementation of hook_install().
+ */
 function bot_commit_install() {
   drupal_install_schema('bot_commit');
 }
