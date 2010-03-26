@@ -64,6 +64,7 @@ function bot_commit_xmlrpc() {
       'bot_commit_record_commit',
       array(
         'string', // Return the commit id.
+        'string', // Repository name
         'string', // Commit id.
         'string', // Commit author.
         'string', // Commit message.
@@ -76,11 +77,12 @@ function bot_commit_xmlrpc() {
 /**
  * Receive and record a commit entry from the XML-RPC call.
  */
-function bot_commit_record_commit($id, $author, $message) {
+function bot_commit_record_commit($repo, $id, $author, $message) {
   $commit = new StdClass;
   $commit->id = $id;
   $commit->message = $message;
   $commit->author = $author;
+  $commit->repo = $repo;
   $commit->timestamp = time();
   drupal_write_record('bot_commit_queue', $commit);
 }
@@ -90,7 +92,7 @@ function bot_commit_record_commit($id, $author, $message) {
  */
 function bot_commit_irc_bot_cron_fastest() {
   // Go through the commit messages and push them to irc.
-  $result = db_query('SELECT qid, id, author, message, timestamp FROM {bot_commit_queue} ORDER BY timestamp DESC');
+  $result = db_query('SELECT qid, id, author, message, repo, timestamp FROM {bot_commit_queue} ORDER BY timestamp DESC');
   while ($commit = db_fetch_object($result)) {
     bot_commit_publish_message($commit);
     db_query('DELETE FROM {bot_commit_queue} WHERE qid = %d', $commit->qid);
@@ -100,6 +102,6 @@ function bot_commit_irc_bot_cron_fastest() {
 function bot_commit_publish_message($commit) {
   $channel = variable_get('bot_commit_channel', '');
   if ($channel) {
-    bot_message($channel, t('@commit by @author: @message', array('@commit' => $commit->id, '@author' => $commit->author, '@message' => $commit->message)));
+    bot_message($channel, t('[@repo] @commit by @author: @message', array('@commit' => $commit->id, '@author' => $commit->author, '@message' => $commit->message, '@repo' => $commit->repo)));
   }
 }

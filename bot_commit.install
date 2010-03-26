@@ -34,6 +34,13 @@ function bot_commit_schema() {
         'default'     => '',
         'not null'    => TRUE,
       ),
+      'repo' => array(
+        'description' => 'Repository name',
+        'type'        => 'varchar',
+        'length'      => 127,
+        'default'     => '',
+        'not null'    => TRUE,
+      ),
       'timestamp' => array(
         'description' => 'Time when this commit was received, will be used by bot cron.',
         'type'        => 'int',
