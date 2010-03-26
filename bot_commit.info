@@ -1,0 +1,8 @@
+; $Id$
+name = Bot Git
+package = Bot
+description = "Allow bot to send messages to IRC."
+dependencies[] = bot
+core = 6.x
+
+project = bot

@@ -1,0 +1,49 @@
+<?php
+
+/**
+ * @file
+ * Enables queued messages for unavailable users.
+ */
+
+/**
+ * Implementation of hook_help().
+ */
+function bot_git_help($path, $arg) {
+  switch ($path) {
+    case 'irc:features':
+      return array(t('Git'));
+    case 'irc:features#git':
+      return t('Send git commit messages that are being sent from a post-receive hook.');
+  }
+}
+
+/**
+ * Add the commit to the queue.
+ */
+function bot_git_xmlrpc() {
+  return array(
+    'bot.git.message',
+    'bot_git_publish_message',
+    array(
+      'string', // commit id
+      'string', // commit message
+    ),
+    t('Forwarding a commit message to IRC'),
+  );
+}
+
+function bot_git_irc_bot_cron() {
+  // Go through the commit messages and push them to irc.
+  $result = db_query('SELECT cid, message, timestamp FROM {bot_commitqueue} ORDER BY timestamp DESC');
+  while ($commit = db_fetch_object($result)) {
+    bot_git_publish_message($commit->cid, $commit->message);
+    db_query('REMOVE FROM {bot_commitqueue} WHERE cid = "%s"', $commit->cid);
+  }
+}
+
+
+// TODO add some security check to prevent unwanted access.
+function bot_git_publish_message($commit_id, $message) {
+  $to = '#test';
+  bot_message($to, t('%commit => %message', array('%commmit' => $commit_id, '%message' => $message)));
+}

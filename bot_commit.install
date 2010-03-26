@@ -1,0 +1,34 @@
+<?php 
+
+function bot_git_schema() {
+  $schema = array();
+  $schema['bot_commitqueue'] = array(
+    'description' => 'Queue commits until the bot cron can go through them and post.',
+    'fields' => array(
+      'cid' => array(
+        'description' => 'Commit id',
+      ),
+      'message' => array(
+        'description' => 'Commit message',
+        'type' => 'text',
+        'default' => '',
+        'not null' => TRUE,
+      ),
+      'timestamp' => array(
+        'description' => 'Time when this commit was received, used by bot cron.',
+        'type' => 'int',
+        'default' => 0,
+        'not null' => TRUE,
+      ),
+    ),
+  );
+  return $schema;
+}
+
+function bot_git_install() {
+  drupal_install_schema('bot_git');
+}
+
+function bot_git_uninstall() {
+  drupal_uninstall_schema('bot_git');
+}
