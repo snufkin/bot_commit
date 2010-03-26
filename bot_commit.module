@@ -8,7 +8,7 @@
 /**
  * Implementation of hook_help().
  */
-function bot_git_help($path, $arg) {
+function bot_commit_help($path, $arg) {
   switch ($path) {
     case 'irc:features':
       return array(t('Git'));
@@ -18,32 +18,54 @@ function bot_git_help($path, $arg) {
 }
 
 /**
+ * Implementation of hook_menu().
+ */
+function bot_commit_menu() {
+  $items = array();
+  $items['admin/settings/bot/bot_commit'] = array(
+    'title' => 'Configure bot commit',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('bot_commit_settings'),
+    'access' => array('administer bot'),
+  );
+  return $items;
+}
+
+/**
  * Add the commit to the queue.
  */
-function bot_git_xmlrpc() {
+function bot_commit_xmlrpc() {
   return array(
-    'bot.git.message',
-    'bot_git_publish_message',
+    'bot_commit.recordCommit',
+    'bot_commit_record_commit',
     array(
-      'string', // commit id
-      'string', // commit message
+      'string', // Commit id.
+      'string', // Commit message.
     ),
     t('Forwarding a commit message to IRC'),
   );
 }
 
-function bot_git_irc_bot_cron() {
+/**
+ * Receive and record a commit entry from the XML-RPC call.
+ */
+function bot_commit_record_commit($commit_id, $commit_message) {
+  $commit = new StdClass;
+  $commit->cid = $commit_id;
+  $commit->commit_message = $commit_message;
+  drupal_write_record('bot_commit_queue', $commit);
+}
+
+function bot_commit_irc_bot_cron_faster() {
   // Go through the commit messages and push them to irc.
   $result = db_query('SELECT cid, message, timestamp FROM {bot_commitqueue} ORDER BY timestamp DESC');
   while ($commit = db_fetch_object($result)) {
-    bot_git_publish_message($commit->cid, $commit->message);
-    db_query('REMOVE FROM {bot_commitqueue} WHERE cid = "%s"', $commit->cid);
+    bot_commit_publish_message($commit->cid, $commit->message);
+    db_query('DELETE FROM {bot_commit_queue} WHERE cid = "%s"', $commit->cid);
   }
 }
 
-
-// TODO add some security check to prevent unwanted access.
-function bot_git_publish_message($commit_id, $message) {
+function bot_commit_publish_message($id, $message) {
   $to = '#test';
-  bot_message($to, t('%commit => %message', array('%commmit' => $commit_id, '%message' => $message)));
+  bot_message($to, t('%commit => %message', array('%commmit' => $id, '%message' => $message)));
 }

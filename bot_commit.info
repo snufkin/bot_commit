@@ -1,7 +1,7 @@
 ; $Id$
-name = Bot Git
+name = Bot Commit
 package = Bot
-description = "Allow bot to send messages to IRC."
+description = "Allow the bot to send commit messages to IRC."
 dependencies[] = bot
 core = 6.x
 
