@@ -6,6 +6,8 @@ function bot_commit_schema() {
     'description' => 'Queue commits until the bot cron can go through them and post.',
     'fields' => array(
       'cid' => array(
+        'type' => 'varchar',
+        'lenght' => 128,
         'description' => 'Commit id',
       ),
       'message' => array(
