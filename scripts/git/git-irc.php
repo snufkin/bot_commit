@@ -9,9 +9,9 @@ post_receive();
  * Compose an XML-RPC message to the server.
  */
 function send($commit_id, $author, $message) {
-  $server = 'http://bot.longlake.co.uk/xmlrpc.php';
+  $server = 'http://example.com/xmlrpc.php';
   $method = 'bot_commit.recordCommit';
-  $key = 'this_is_a_secret_key',
+  $key = 'this_is_a_secret_key';
 
   $parameters = array(
     $server,
@@ -23,7 +23,7 @@ function send($commit_id, $author, $message) {
   );
 
   // The parameters cant be passed as an array to xmlrpc(). 
-  //$result = call_user_func_array('_xmlrpc', $parameters);
+  $result = call_user_func_array('_xmlrpc', $parameters);
 }
 
 /**
