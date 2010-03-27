@@ -130,7 +130,7 @@ function bot_commit_publish_message($commit) {
       }
     }
 
-    bot_message($channel, t('Commit by @author: @message. Link: @gitweb_url', 
+    bot_message($channel, t('Commit by @author: @message Link: @gitweb_url', 
       array(
         '@commit' => $commit->id,
         '@author' => $commit->author,
