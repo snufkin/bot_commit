@@ -1,5 +1,7 @@
 <?php
 
+include 'xmlrpc.inc';
+
 $server = 'http://bot.longlake.co.uk/xmlrpc.php';
 
 post_receive();
@@ -8,12 +10,21 @@ post_receive();
  * Compose an XML-RPC message to the server.
  */
 function send($commit_id, $author, $message) {
-  // method: bot_commit_recordCommit(
-}
+  $method = 'bot_commit.recordCommit';
+  $arguments = array($commit_id, $author, $message);
 
-function git_config_get($name) {
-  exec('git config --get', $output);
-  return $output;
+  $parameters = array(
+    $server,
+    $method,
+  );
+
+  if (is_array($arguments)) {
+    $parameters = array_merge($parameters, $arguments);
+  }
+  print_r($parameters);
+
+  // The parameters cant be passed as an array to xmlrpc(). 
+  //$result = _xmlrpc($parameters);
 }
 
 /**
@@ -25,8 +36,8 @@ function git_show($hash, $format = 'short') {
 }
 
 function git_rev_parse($hash) {
-  exec("git rev-parse --short", $output);
-  return $output;
+  exec("git rev-parse --short $hash", $output);
+  return $output[0];
 }
 
 function process_commits($commits) {
@@ -38,12 +49,15 @@ function process_commits($commits) {
     $commit_id = $use_index ? "$refname commit $commit_hash" : 
       "$refname commit (#$delta) $commit_hash";
     $raw_message = git_show($commit_hash, 'format:%cn%n%s');
+    $author = $raw_message[0];
+    $message = $raw_message[1];
+    send($commit_id, $author, $message);
   }
 }
 
 function get_commits($old_rev, $new_rev) {
   exec("git log --pretty=format:%H --reverse $old_rev..$new_rev", $output);
-  return $output;
+  return $output[0];
 }
 
 function post_receive() {
@@ -52,9 +66,12 @@ function post_receive() {
   $handle = fopen("php://stdin", "r");
   while (!feof($handle)) {
     $line = trim(fread($handle, 512));
-    list($old_rev, $new_rev, $ref_name) = explode(' ', $line);
-    $commits[$refname] = get_commits($old_rev, $new_rev);
+    if ($line) {
+      list($old_rev, $new_rev, $refname) = explode(' ', $line);
+      $commits[$refname] = get_commits($old_rev, $new_rev);
+    }
   }
   fclose($handle);
   process_commits($commits);
 }
+
