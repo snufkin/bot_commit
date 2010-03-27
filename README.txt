@@ -11,3 +11,8 @@ Setup
 2. Copy the PHP script and the xmlrpc.inc from the scripts directory to the server where you push your commits. 
 Edit and set the key to the one you just configured above, also set the server to your bot server.
 Edit the post-receive hook in your repository, to have eg: /usr/share/bin/php /home/git/git-irc.php
+
+TODO
+====
+
+Currently only git is supported, and even there only one commit message works per push.
