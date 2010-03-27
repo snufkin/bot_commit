@@ -64,7 +64,6 @@ function bot_commit_xmlrpc() {
       'bot_commit_record_commit',
       array(
         'string', // Return the commit id.
-        'string', // Repository name
         'string', // Commit id.
         'string', // Commit author.
         'string', // Commit message.
@@ -82,7 +81,7 @@ function bot_commit_record_commit($repo, $id, $author, $message) {
   $commit->id = $id;
   $commit->message = $message;
   $commit->author = $author;
-  $commit->repo = $repo;
+  //$commit->repo = $repo;
   $commit->timestamp = time();
   drupal_write_record('bot_commit_queue', $commit);
 }
@@ -102,6 +101,6 @@ function bot_commit_irc_bot_cron_fastest() {
 function bot_commit_publish_message($commit) {
   $channel = variable_get('bot_commit_channel', '');
   if ($channel) {
-    bot_message($channel, t('[@repo] @commit by @author: @message', array('@commit' => $commit->id, '@author' => $commit->author, '@message' => $commit->message, '@repo' => $commit->repo)));
+    bot_message($channel, t('@commit by @author: @message', array('@commit' => $commit->id, '@author' => $commit->author, '@message' => $commit->message, '@repo' => $commit->repo)));
   }
 }
