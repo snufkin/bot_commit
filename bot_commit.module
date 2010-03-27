@@ -76,7 +76,7 @@ function bot_commit_xmlrpc() {
 /**
  * Receive and record a commit entry from the XML-RPC call.
  */
-function bot_commit_record_commit($repo, $id, $author, $message) {
+function bot_commit_record_commit($id, $author, $message) {
   $commit = new StdClass;
   $commit->id = $id;
   $commit->message = $message;
