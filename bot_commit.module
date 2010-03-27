@@ -54,15 +54,18 @@ function bot_commit_settings() {
 
   $form['bot_commit_gitweb'] = array(
     '#title' => t('Gitweb'),
-    '#description' => t('Specify the gitweb url you want to use. Use [commit] for the commit id. Example: http://git.freestylesystems.co.uk/?p=cfe.git;a=commitdiff;h=609e504146a2a808531f5d8c322ab20cd12794ef'),
+    '#description' => t('Specify the gitweb url you want to use. Use [commit] for the commit id. Example: http://git.freestylesystems.co.uk/?p=cfe.git;a=commitdiff;h=[commit].'),
     '#type' => 'textfield',
+    '#size' => 40,
     '#default_value' => variable_get('bot_commit_gitweb', ''),
   );
 
   if (module_exists('shorten')) {
-    $options = array(0);
+    $options = array(0 => t('None'));
     $services = module_invoke_all('shorten_service'); 
-    $options = array_merge($options, $services);
+    foreach ($services as $service => $url) {
+      $options[$service] = $service;
+    }
     $form['bot_commit_shorten_api'] = array(
       '#title' => t('URL Shortening'),
       '#description' => t('Set the preferred url shortening service that will be used to shorten the gitweb url.'),
