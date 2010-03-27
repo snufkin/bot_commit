@@ -118,6 +118,9 @@ function bot_commit_record_commit($key, $id, $author, $message) {
     $commit->timestamp = time();
     drupal_write_record('bot_commit_queue', $commit);
   }
+  else {
+    watchdog('bot_commit', 'Unauthorized commit record request.', array(), WATCHDOG_WARNING);
+  }
 }
 
 /**
