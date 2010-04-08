@@ -54,7 +54,7 @@ function bot_commit_settings() {
 
   $form['bot_commit_gitweb'] = array(
     '#title' => t('Gitweb'),
-    '#description' => t('Specify the gitweb url you want to use. Use [commit] for the commit id. Example: http://git.freestylesystems.co.uk/?p=cfe.git;a=commitdiff;h=[commit].'),
+    '#description' => t('Specify the gitweb url you want to use. Use [commit] for the commit id. Example: http://git.example.com/?p=myproject.git;a=commitdiff;h=[commit].'),
     '#type' => 'textfield',
     '#size' => 40,
     '#default_value' => variable_get('bot_commit_gitweb', ''),
@@ -144,7 +144,7 @@ function bot_commit_publish_message($commit) {
       }
     }
 
-    bot_message($channel, t('Commit by @author: @message Link: @gitweb_url', 
+    bot_message($channel, t('Commit by @author: @message @gitweb_url', 
       array(
         '@commit' => $commit->id,
         '@author' => $commit->author,
