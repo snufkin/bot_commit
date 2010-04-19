@@ -140,18 +140,19 @@ function bot_commit_publish_message($commit) {
   if ($channel = variable_get('bot_commit_channel', '')) {
     if ($gitweb = variable_get('bot_commit_gitweb', '')) {
       $gitweb_url = str_replace('[commit]', $commit->id, $gitweb);
-      $gitweb_url = str_replace('[project]', $commit->repo, $gitweb_url);
+      $gitweb_url = str_replace('[repo]', $commit->repo, $gitweb_url);
       if (module_exists('shorten') && $shorturl_service = variable_get('bot_commit_shorten_api', 0)) {
         $gitweb_url = shorten_url($gitweb_url, $shorturl_service);
       }
     }
 
-    bot_message($channel, t('Commit by @author: @message @gitweb_url', 
+    $project_name = str_replace('.git', '', $commit->repo);
+    bot_message($channel, t('[@repo] Commit by @author: @message @gitweb_url', 
       array(
         '@commit' => $commit->id,
         '@author' => $commit->author,
         '@message' => $commit->message,
-        '@repo' => $commit->repo,
+        '@repo' => $project_name,
         '@gitweb_url' => $gitweb_url,
       )));
   }
