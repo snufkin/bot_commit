@@ -19,7 +19,8 @@ function send($commit_id, $author, $message) {
     $key,
     $commit_id,
     $author,
-    $message
+    $message,
+    $project
   );
 
   // The parameters cant be passed as an array to xmlrpc(). 
@@ -39,7 +40,7 @@ function git_rev_parse($hash) {
   return $output[0];
 }
 
-function process_commits($commits) {
+function process_commits($commits, $project) {
   $delta = 0;
   foreach ($commits as $refname => $commit) {
     $delta++;
@@ -50,7 +51,7 @@ function process_commits($commits) {
     $raw_message = git_show($commit_hash, 'format:%cn%n%s');
     $author = $raw_message[0];
     $message = $raw_message[1];
-    send($commit, $author, $message);
+    send($commit, $author, $message, $project);
   }
 }
 
@@ -66,12 +67,12 @@ function post_receive() {
   while (!feof($handle)) {
     $line = trim(fread($handle, 512));
     if ($line) {
-      list($old_rev, $new_rev, $refname) = explode(' ', $line);
+      list($old_rev, $new_rev, $refname, $project) = explode(' ', $line);
       $commits[$refname] = get_commits($old_rev, $new_rev);
     }
   }
   fclose($handle);
-  process_commits($commits);
+  process_commits($commits, $project);
 }
 
 function drupal_http_request($url, $headers = array(), $method = 'GET', $data = NULL, $retry = 3) {
