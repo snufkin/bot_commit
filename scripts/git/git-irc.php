@@ -51,7 +51,7 @@ function process_commits($commits, $project) {
     $raw_message = git_show($commit_hash, 'format:%cn%n%s');
     $author = $raw_message[0];
     $message = $raw_message[1];
-    send($commit, $author, $message, $project);
+    send($commit_id, $author, $message, $project);
   }
 }
 
