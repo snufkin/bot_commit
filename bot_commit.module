@@ -47,7 +47,7 @@ function bot_commit_menu() {
  * Submit handler for github.
  */
 function bot_commit_github_receive() {
-  if ($payload = filter_input('POST', 'payload')) {
+  if ($payload = filter_input(INPUT_POST, 'payload')) {
     $payload = json_decode($payload);
     foreach ($payload->commits as $commit) {
       bot_commit_queue($commit->id, $commit->author->name, $commit->message, $payload->repository->name, $commit->url);
