@@ -1,18 +1,27 @@
 <?php
+/**
+ * Installation instructions:
+ * - Place this file into the same directory with the xmlrpc.inc.
+ * - Edit the post-receive hook, so it calls this file with the correct path (example in the readme).
+ * - Edit the configuration options (server, key).
+ * - Profit.
+ */
+
+/**
+ * Configuration
+ */
+$server = 'http://localhost/bot/xmlrpc.php';
+$key = 'this_is_a_secret_key';
 
 include 'xmlrpc.inc';
-
-
 post_receive();
 
 /**
  * Compose an XML-RPC message to the server.
  */
 function send($commit_id, $author, $message) {
-  $server = 'http://example.com/xmlrpc.php';
   $method = 'bot_commit.recordCommit';
-  $key = 'this_is_a_secret_key';
-
+  global $server, $key;
   $parameters = array(
     $server,
     $method,
@@ -51,7 +60,7 @@ function process_commits($commits, $project) {
     $raw_message = git_show($commit_hash, 'format:%cn%n%s');
     $author = $raw_message[0];
     $message = $raw_message[1];
-    send($commit_id, $author, $message, $project);
+    send($commit, $author, $message, $project);
   }
 }
 
@@ -67,6 +76,7 @@ function post_receive() {
   while (!feof($handle)) {
     $line = trim(fread($handle, 512));
     if ($line) {
+    echo $line;
       list($old_rev, $new_rev, $refname, $project) = explode(' ', $line);
       $commits[$refname] = get_commits($old_rev, $new_rev);
     }
