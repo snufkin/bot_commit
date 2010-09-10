@@ -5,6 +5,10 @@
  * Enables queued messages for unavailable users.
  */
 
+function bot_commit_perm() {
+  return array('access github callback');
+}
+
 /**
  * Implementation of hook_help().
  */
@@ -23,13 +27,32 @@ function bot_commit_help($path, $arg) {
 function bot_commit_menu() {
   $items = array();
   $items['admin/settings/bot/bot_commit'] = array(
-    'title'           => 'Configure bot commit',
+    'title'           => 'Bot commit',
     'description'     => 'Configure the commit messages the bot can push to IRC.',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('bot_commit_settings'),
     'access arguments' => array('administer bot'),
   );
+  $items['bot_commit/github'] = array(
+    'title' => 'Github callback',
+    'page callback' => 'bot_commit_github_receive',
+    'access arguments' => array('access github callback'),
+    'type' => MENU_CALLBACK,
+  );
+
   return $items;
+}
+
+/**
+ * Submit handler for github.
+ */
+function bot_commit_github_receive() {
+  if ($payload = filter_input('POST', 'payload')) {
+    $payload = json_decode($payload);
+    foreach ($payload->commits as $commit) {
+      bot_commit_queue($commit->author->name, $commit->message, $commit->url, $payload->repository->name);
+    }
+  }
 }
 
 function bot_commit_settings() {
@@ -122,6 +145,9 @@ function bot_commit_record_commit($key, $id, $author, $message, $repo) {
   else {
     watchdog('bot_commit', 'Unauthorized commit record request.', array(), WATCHDOG_WARNING);
   }
+}
+
+function bot_commit_queue($id, $author, $message, $repo, $url) {
 }
 
 /**
