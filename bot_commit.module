@@ -17,7 +17,7 @@ function bot_commit_help($path, $arg) {
     case 'irc:features':
       return array(t('Bot Commit'));
     case 'irc:features#bot_commi':
-      return t('Post commit messages and gitweb links to IRC. They are sent to the bot via XML-RPC from the git post-receive hook.');
+      return t('Post commit messages and gitweb links to IRC. They are sent to the bot via XML-RPC from the git post-receive hook, or from github.');
   }
 }
 
