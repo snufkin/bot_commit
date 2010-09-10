@@ -50,7 +50,7 @@ function bot_commit_github_receive() {
   if ($payload = filter_input('POST', 'payload')) {
     $payload = json_decode($payload);
     foreach ($payload->commits as $commit) {
-      bot_commit_queue($commit->author->name, $commit->message, $commit->url, $payload->repository->name);
+      bot_commit_queue($commit->id, $commit->author->name, $commit->message, $payload->repository->name, $commit->url);
     }
   }
 }
@@ -134,20 +134,22 @@ function bot_commit_xmlrpc() {
  */
 function bot_commit_record_commit($key, $id, $author, $message, $repo) {
   if (variable_get('bot_commit_key', '') == $key) {
-    $commit = new StdClass;
-    $commit->id = $id;
-    $commit->message = $message;
-    $commit->author = $author;
-    $commit->repo = $repo;
-    $commit->timestamp = time();
-    drupal_write_record('bot_commit_queue', $commit);
+    bot_commit_queue($id, $author, $message, $repo);
   }
   else {
     watchdog('bot_commit', 'Unauthorized commit record request.', array(), WATCHDOG_WARNING);
   }
 }
 
-function bot_commit_queue($id, $author, $message, $repo, $url) {
+function bot_commit_queue($id, $author, $message, $repo, $url = '') {
+  $commit = new StdClass;
+  $commit->id = $id;
+  $commit->message = $message;
+  $commit->author = $author;
+  $commit->repo = $repo;
+  $commit->url = $url;
+  $commit->timestamp = time();
+  drupal_write_record('bot_commit_queue', $commit);
 }
 
 /**
@@ -155,7 +157,7 @@ function bot_commit_queue($id, $author, $message, $repo, $url) {
  */
 function bot_commit_irc_bot_cron_fastest() {
   // Go through the commit messages and push them to irc.
-  $result = db_query('SELECT qid, id, author, message, repo, timestamp FROM {bot_commit_queue} ORDER BY timestamp DESC');
+  $result = db_query('SELECT qid, id, author, message, repo, timestamp, url FROM {bot_commit_queue} ORDER BY timestamp DESC');
   while ($commit = db_fetch_object($result)) {
     bot_commit_publish_message($commit);
     db_query('DELETE FROM {bot_commit_queue} WHERE qid = %d', $commit->qid);
@@ -164,23 +166,39 @@ function bot_commit_irc_bot_cron_fastest() {
 
 function bot_commit_publish_message($commit) {
   if ($channel = variable_get('bot_commit_channel', '')) {
-    if ($gitweb = variable_get('bot_commit_gitweb', '')) {
-      $gitweb_url = str_replace('[commit]', $commit->id, $gitweb);
-      $gitweb_url = str_replace('[repo]', $commit->repo, $gitweb_url);
-      if (module_exists('shorten') && $shorturl_service = variable_get('bot_commit_shorten_api', 0)) {
-        $gitweb_url = shorten_url($gitweb_url, $shorturl_service);
-      }
+    $project_name = str_replace('.git', '', $commit->repo);
+
+    // We work either from the specified url for this commit, or try to assemble one ourselves.
+    if ($commit->url) {
+      $url = $commit->url;
     }
 
-    $project_name = str_replace('.git', '', $commit->repo);
-    bot_message($channel, t('[@repo] Commit by @author: @message @gitweb_url', 
+    elseif ($gitweb = variable_get('bot_commit_gitweb', '')) {
+      $url = str_replace('[commit]', $commit->id, $gitweb);
+      $url = str_replace('[repo]', $commit->repo, $url);
+    }
+
+    if (isset($url) && module_exists('shorten') && $shorturl_service = variable_get('bot_commit_shorten_api', 0)) {
+      $url = shorten_url($url, $shorturl_service);
+    }
+
+    if (isset($url)) {
+      bot_message($channel, t('[@repo] @author: @message @url',
+        array(
+          '@author' => $commit->author,
+          '@message' => $commit->message,
+          '@repo' => $project_name,
+          '@url' => $url,
+        )));
+    }
+    else {
+    bot_message($channel, t('[@repo] @author: @message',
       array(
-        '@commit' => $commit->id,
         '@author' => $commit->author,
         '@message' => $commit->message,
-        '@repo' => $project_name,
-        '@gitweb_url' => $gitweb_url,
+        '@repo' => $project_name
       )));
+    }
   }
 }
 

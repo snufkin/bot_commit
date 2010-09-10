@@ -48,6 +48,13 @@ function bot_commit_schema() {
         'not null'    => TRUE,
         'unsigned'    => TRUE,
       ),
+      'url' => array(
+        'description' => 'URL to be displayed when the bot spits out the message.',
+        'type'        => 'varchar',
+        'length'      => 255,
+        'default'     => '',
+        'not null'    => TRUE,
+      ),
     ),
     'primary key' => array('qid'),
   );
@@ -63,4 +70,16 @@ function bot_commit_install() {
 
 function bot_commit_uninstall() {
   drupal_uninstall_schema('bot_commit');
+}
+
+/**
+ * Implementing hook_update_N().
+ *
+ * Adding new url field to queue table.
+ */
+function bot_commit_update_6001() {
+  $ret = array();
+  $schema = bot_commit_schema();
+  db_add_field($ret, 'bot_commit_queue', 'url', $schema['bot_commit_queue']['fields']['url']);
+  return $ret;
 }
